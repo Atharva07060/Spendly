@@ -1,6 +1,12 @@
 from flask import Flask, render_template
+from database.db import init_db, seed_db
 
 app = Flask(__name__)
+
+with app.app_context():
+    init_db()
+    seed_db()
+
 
 
 # ------------------------------------------------------------------ #
@@ -20,6 +26,18 @@ def register():
 @app.route("/login")
 def login():
     return render_template("login.html")
+
+
+@app.route("/terms")
+def terms():
+    return render_template("terms.html")
+
+
+@app.route("/privacy")
+def privacy():
+    return render_template("privacy.html")
+
+
 
 
 # ------------------------------------------------------------------ #
@@ -44,6 +62,7 @@ def add_expense():
 @app.route("/expenses/<int:id>/edit")
 def edit_expense(id):
     return "Edit expense — coming in Step 8"
+
 
 
 @app.route("/expenses/<int:id>/delete")
