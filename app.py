@@ -1,6 +1,12 @@
 from flask import Flask, render_template
+from database.db import init_db, seed_db
 
 app = Flask(__name__)
+
+with app.app_context():
+    init_db()
+    seed_db()
+
 
 
 # ------------------------------------------------------------------ #
@@ -56,6 +62,7 @@ def add_expense():
 @app.route("/expenses/<int:id>/edit")
 def edit_expense(id):
     return "Edit expense — coming in Step 8"
+
 
 
 @app.route("/expenses/<int:id>/delete")
