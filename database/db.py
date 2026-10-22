@@ -12,6 +12,18 @@ def get_db():
     conn.execute("PRAGMA foreign_keys = ON;")
     return conn
 
+def get_user_by_email(email):
+    """
+    Retrieves a user from the database by their email.
+    Returns a sqlite3.Row object if found, otherwise None.
+    """
+    conn = get_db()
+    try:
+        cursor = conn.execute("SELECT * FROM users WHERE email = ?", (email,))
+        return cursor.fetchone()
+    finally:
+        conn.close()
+
 def init_db():
     """
     Creates the users and expenses tables if they don't exist.
@@ -78,5 +90,23 @@ def seed_db():
                 "INSERT INTO expenses (user_id, amount, category, date, description) VALUES (?, ?, ?, ?, ?)",
                 expenses
             )
+    finally:
+        conn.close()
+
+def create_user(name, email, password_hash):
+    """
+    Creates a new user in the database.
+    Returns the user ID if successful, or None if the email is already taken.
+    """
+    conn = get_db()
+    try:
+        with conn:
+            cursor = conn.execute(
+                "INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)",
+                (name, email, password_hash)
+            )
+            return cursor.lastrowid
+    except sqlite3.IntegrityError:
+        return None
     finally:
         conn.close()
