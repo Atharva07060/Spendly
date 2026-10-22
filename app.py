@@ -85,12 +85,18 @@ def privacy():
 
 @app.route("/logout")
 def logout():
-    return "Logout — coming in Step 3"
+    session.clear()
+    flash("You have been logged out successfully.", "info")
+    return redirect(url_for("landing"))
 
 
 @app.route("/profile")
 def profile():
-    return "Profile page — coming in Step 4"
+    if "user_id" not in session:
+        flash("Please log in to access your profile.", "error")
+        return redirect(url_for("login"))
+
+    return render_template("profile.html", user_name=session.get("user_name"))
 
 
 @app.route("/expenses/add")
