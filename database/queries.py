@@ -25,26 +25,41 @@ def get_user_by_id(user_id):
     finally:
         conn.close()
 
-def get_summary_stats(user_id):
+def get_summary_stats(user_id, start_date=None, end_date=None):
     """
     Calculates total spent, transaction count, and the top category for a user.
+    Optional date range filtering.
     """
     conn = get_db()
     try:
-        stats = conn.execute(
-            "SELECT SUM(amount) as total, COUNT(*) as count FROM expenses WHERE user_id = ?",
-            (user_id,)
-        ).fetchone()
+        query = "SELECT SUM(amount) as total, COUNT(*) as count FROM expenses WHERE user_id = ?"
+        params = [user_id]
+
+        if start_date:
+            query += " AND date >= ?"
+            params.append(start_date)
+        if end_date:
+            query += " AND date <= ?"
+            params.append(end_date)
+
+        stats = conn.execute(query, params).fetchone()
 
         total_spent = stats['total'] if stats['total'] else 0.0
         transaction_count = stats['count'] if stats['count'] else 0
 
         top_category = "—"
         if transaction_count > 0:
-            top_cat_row = conn.execute(
-                "SELECT category FROM expenses WHERE user_id = ? GROUP BY category ORDER BY SUM(amount) DESC LIMIT 1",
-                (user_id,)
-            ).fetchone()
+            cat_query = "SELECT category FROM expenses WHERE user_id = ?"
+            cat_params = [user_id]
+            if start_date:
+                cat_query += " AND date >= ?"
+                cat_params.append(start_date)
+            if end_date:
+                cat_query += " AND date <= ?"
+                cat_params.append(end_date)
+
+            cat_query += " GROUP BY category ORDER BY SUM(amount) DESC LIMIT 1"
+            top_cat_row = conn.execute(cat_query, cat_params).fetchone()
             if top_cat_row:
                 top_category = top_cat_row['category']
 
@@ -56,16 +71,27 @@ def get_summary_stats(user_id):
     finally:
         conn.close()
 
-def get_recent_transactions(user_id, limit=10):
+def get_recent_transactions(user_id, limit=10, start_date=None, end_date=None):
     """
     Retrieves the most recent transactions for a user, newest first.
+    Optional date range filtering.
     """
     conn = get_db()
     try:
-        rows = conn.execute(
-            "SELECT date, description, category, amount FROM expenses WHERE user_id = ? ORDER BY date DESC, created_at DESC LIMIT ?",
-            (user_id, limit)
-        ).fetchall()
+        query = "SELECT date, description, category, amount FROM expenses WHERE user_id = ?"
+        params = [user_id]
+
+        if start_date:
+            query += " AND date >= ?"
+            params.append(start_date)
+        if end_date:
+            query += " AND date <= ?"
+            params.append(end_date)
+
+        query += " ORDER BY date DESC, created_at DESC LIMIT ?"
+        params.append(limit)
+
+        rows = conn.execute(query, params).fetchall()
 
         return [
             {
@@ -78,26 +104,40 @@ def get_recent_transactions(user_id, limit=10):
     finally:
         conn.close()
 
-def get_category_breakdown(user_id):
+def get_category_breakdown(user_id, start_date=None, end_date=None):
     """
     Retrieves a breakdown of spending by category with percentages.
+    Optional date range filtering.
     """
     conn = get_db()
     try:
         # Get total spending first for percentage calculation
-        total_row = conn.execute(
-            "SELECT SUM(amount) as total FROM expenses WHERE user_id = ?",
-            (user_id,)
-        ).fetchone()
+        query_total = "SELECT SUM(amount) as total FROM expenses WHERE user_id = ?"
+        params_total = [user_id]
+        if start_date:
+            query_total += " AND date >= ?"
+            params_total.append(start_date)
+        if end_date:
+            query_total += " AND date <= ?"
+            params_total.append(end_date)
+
+        total_row = conn.execute(query_total, params_total).fetchone()
         total_spent = total_row['total'] if total_row['total'] else 0.0
 
         if total_spent == 0:
             return []
 
-        rows = conn.execute(
-            "SELECT category as name, SUM(amount) as amount FROM expenses WHERE user_id = ? GROUP BY category ORDER BY amount DESC",
-            (user_id,)
-        ).fetchall()
+        query_breakdown = "SELECT category as name, SUM(amount) as amount FROM expenses WHERE user_id = ?"
+        params_breakdown = [user_id]
+        if start_date:
+            query_breakdown += " AND date >= ?"
+            params_breakdown.append(start_date)
+        if end_date:
+            query_breakdown += " AND date <= ?"
+            params_breakdown.append(end_date)
+
+        query_breakdown += " GROUP BY category ORDER BY amount DESC"
+        rows = conn.execute(query_breakdown, params_breakdown).fetchall()
 
         breakdown = []
         for row in rows:
