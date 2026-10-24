@@ -7,10 +7,13 @@ def get_db():
     """
     Returns a SQLite connection with row_factory and foreign keys enabled.
     """
+    # Use global DB_PATH directly. This allows tests to modify it.
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON;")
     return conn
+
+
 
 def get_user_by_email(email):
     """

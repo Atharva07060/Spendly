@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session
 from database.db import init_db, seed_db, create_user, get_user_by_email
+from database.queries import get_user_by_id, get_summary_stats, get_recent_transactions, get_category_breakdown
 from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
@@ -96,7 +97,19 @@ def profile():
         flash("Please log in to access your profile.", "error")
         return redirect(url_for("login"))
 
-    return render_template("profile.html", user_name=session.get("user_name"))
+    user_id = session["user_id"]
+    user_info = get_user_by_id(user_id)
+    stats = get_summary_stats(user_id)
+    transactions = get_recent_transactions(user_id)
+    breakdown = get_category_breakdown(user_id)
+
+    return render_template(
+        "profile.html",
+        user=user_info,
+        stats=stats,
+        transactions=transactions,
+        breakdown=breakdown
+    )
 
 
 @app.route("/expenses/add")
